@@ -147,12 +147,23 @@ func checkConnString(dialers common.Dialers, c connstring.ConnString) (found []i
 }
 
 func main() {
+	onlyLocal := true
+	noTor := true
+
 	var cs []connstring.ConnString
 	for _, c := range connStrings {
 		conn, err := connstring.Parse(c)
 		if err != nil {
 			fmt.Printf("%s is not valid: %v\n", c, err)
 			os.Exit(1)
+		}
+
+		if !conn.Local {
+			onlyLocal = false
+		}
+
+		if conn.IsTor() {
+			noTor = false
 		}
 
 		cs = append(cs, conn)
@@ -162,6 +173,15 @@ func main() {
 	if !Opts.TestNet && !Opts.MainNet {
 		Opts.AutoNet = true
 	}
+
+	// skip Tor altogether whenever possible
+	if onlyLocal {
+		opts.TorMode = "never"
+
+	} else if opts.TorMode == "native" && noTor {
+		opts.TorMode = "never"
+	}
+
 
 	dialers, err := common.GetDialers(opts.TorMode, opts.TorSocks)
 	if err != nil {
