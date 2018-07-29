@@ -1,6 +1,8 @@
 package common
 
 import (
+	"path"
+
 	"github.com/meeDamian/bc1toolkit/lib/connstring"
 	"github.com/meeDamian/bc1toolkit/lib/tor"
 	"github.com/pkg/errors"
@@ -8,15 +10,20 @@ import (
 	"golang.org/x/net/proxy"
 )
 
+const cacheDir = "com.meedamian.bc1toolkit"
+
+type (
+	Dialers struct {
+		Tor      proxy.Dialer
+		ClearNet proxy.Dialer
+		mode     string
+	}
+
+	SpeakFn func(dialer proxy.Dialer, addr connstring.ConnString, testNet bool) (interface{}, error)
+)
+
+// TODO: deprecated
 var Log = logrus.New()
-
-type Dialers struct {
-	Tor      proxy.Dialer
-	ClearNet proxy.Dialer
-	mode     string
-}
-
-type SpeakFn func(dialer proxy.Dialer, addr connstring.ConnString, testNet bool) (interface{}, error)
 
 func (d Dialers) Default(isTor, isLocal bool) (proxy.Dialer, error) {
 	if isLocal {
@@ -46,6 +53,10 @@ func (d Dialers) Default(isTor, isLocal bool) (proxy.Dialer, error) {
 	return d.ClearNet, nil
 }
 
+func GetLogger(binaryName string) *logrus.Entry {
+	return logrus.New().WithField("binary", binaryName)
+}
+
 func GetDialers(torMode string, torSocks []string) (d Dialers, _ error) {
 	d = Dialers{
 		mode:     torMode,
@@ -67,4 +78,8 @@ func GetDialers(torMode string, torSocks []string) (d Dialers, _ error) {
 
 	d.Tor = torDialer
 	return
+}
+
+func GetCacheDir() string {
+	return path.Join(cacheBase, cacheDir)
 }

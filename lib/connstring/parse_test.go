@@ -60,8 +60,8 @@ func TestParseIpV4(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeIpV4)
 		})
 
-		Convey(".Addr should be set to the original IP", func() {
-			So(addr.Addr, ShouldEqual, ipV4NoPort)
+		Convey(".Host should be set to the original IP", func() {
+			So(addr.Host, ShouldEqual, ipV4NoPort)
 		})
 
 		Convey(".Port should be empty", func() {
@@ -92,8 +92,8 @@ func TestParseIpV4(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeIpV4)
 		})
 
-		Convey(".Addr should be set to the original IP", func() {
-			So(addr.Addr, ShouldEqual, ipV4NoPort)
+		Convey(".Host should be set to the original IP", func() {
+			So(addr.Host, ShouldEqual, ipV4NoPort)
 		})
 
 		Convey(".Port should be set to 8333", func() {
@@ -126,8 +126,8 @@ func TestParseLocalIpV4(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeIpV4)
 		})
 
-		Convey(".Addr should be set to the original IP", func() {
-			So(addr.Addr, ShouldEqual, localIpV4NoPort)
+		Convey(".Host should be set to the original IP", func() {
+			So(addr.Host, ShouldEqual, localIpV4NoPort)
 		})
 
 		Convey(".Port should be empty", func() {
@@ -158,8 +158,8 @@ func TestParseLocalIpV4(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeIpV4)
 		})
 
-		Convey(".Addr should be set to the original IP", func() {
-			So(addr.Addr, ShouldEqual, localIpV4NoPort)
+		Convey(".Host should be set to the original IP", func() {
+			So(addr.Host, ShouldEqual, localIpV4NoPort)
 		})
 
 		Convey(".Port should be set to 8333", func() {
@@ -195,8 +195,8 @@ func TestParseIpV6(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeIpV6)
 		})
 
-		Convey(".Addr should be set to the original IP", func() {
-			So(addr.Addr, ShouldEqual, ipV6NoPort)
+		Convey(".Host should be set to the original IP", func() {
+			So(addr.Host, ShouldEqual, ipV6NoPort)
 		})
 
 		Convey(".Port should be empty", func() {
@@ -227,8 +227,8 @@ func TestParseIpV6(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeIpV6)
 		})
 
-		Convey(".Addr should be set to the original IP", func() {
-			So(addr.Addr, ShouldEqual, ipV6NoPort)
+		Convey(".Host should be set to the original IP", func() {
+			So(addr.Host, ShouldEqual, ipV6NoPort)
 		})
 
 		Convey(".Port should be set to 8333", func() {
@@ -261,8 +261,8 @@ func TestParseLocalIpV6(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeIpV6)
 		})
 
-		Convey(".Addr should be set to the original IP", func() {
-			So(addr.Addr, ShouldEqual, localIpV6NoPort)
+		Convey(".Host should be set to the original IP", func() {
+			So(addr.Host, ShouldEqual, localIpV6NoPort)
 		})
 
 		Convey(".Port should be empty", func() {
@@ -293,8 +293,8 @@ func TestParseLocalIpV6(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeIpV6)
 		})
 
-		Convey(".Addr should be set to the original IP", func() {
-			So(addr.Addr, ShouldEqual, localIpV6NoPort)
+		Convey(".Host should be set to the original IP", func() {
+			So(addr.Host, ShouldEqual, localIpV6NoPort)
 		})
 
 		Convey(".Port should be set to 8333", func() {
@@ -330,8 +330,8 @@ func TestParseTorV2(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeTorV2)
 		})
 
-		Convey(".Addr should be set to the original address", func() {
-			So(addr.Addr, ShouldEqual, torV2NoPort)
+		Convey(".Host should be set to the original address", func() {
+			So(addr.Host, ShouldEqual, torV2NoPort)
 		})
 
 		Convey(".Port should be empty", func() {
@@ -362,8 +362,8 @@ func TestParseTorV2(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeTorV2)
 		})
 
-		Convey(".Addr should be set to the original address", func() {
-			So(addr.Addr, ShouldEqual, torV2NoPort)
+		Convey(".Host should be set to the original address", func() {
+			So(addr.Host, ShouldEqual, torV2NoPort)
 		})
 
 		Convey(".Port should be set to 8333", func() {
@@ -399,8 +399,8 @@ func TestParseTorV3(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeTorV3)
 		})
 
-		Convey(".Addr should be set to the original address", func() {
-			So(addr.Addr, ShouldEqual, torV3NoPort)
+		Convey(".Host should be set to the original address", func() {
+			So(addr.Host, ShouldEqual, torV3NoPort)
 		})
 
 		Convey(".Port should be empty", func() {
@@ -431,8 +431,8 @@ func TestParseTorV3(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeTorV3)
 		})
 
-		Convey(".Addr should be set to the original IP", func() {
-			So(addr.Addr, ShouldEqual, torV3NoPort)
+		Convey(".Host should be set to the original IP", func() {
+			So(addr.Host, ShouldEqual, torV3NoPort)
 		})
 
 		Convey(".Port should be set to 8333", func() {
@@ -467,8 +467,8 @@ func TestParseTorV3(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeTorV3)
 		})
 
-		Convey(".Addr should be set to the original IP", func() {
-			So(addr.Addr, ShouldEqual, torV3NoPort)
+		Convey(".Host should be set to the original IP", func() {
+			So(addr.Host, ShouldEqual, torV3NoPort)
 		})
 
 		Convey(".Port should be set to 8333", func() {
@@ -504,8 +504,8 @@ func TestParseDomain(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeDomain)
 		})
 
-		Convey(".Addr should be set to the original domain", func() {
-			So(addr.Addr, ShouldEqual, domainNoPort)
+		Convey(".Host should be set to the original domain", func() {
+			So(addr.Host, ShouldEqual, domainNoPort)
 		})
 
 		Convey(".Port should be empty", func() {
@@ -536,8 +536,8 @@ func TestParseDomain(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeDomain)
 		})
 
-		Convey(".Addr should be set to the original domain", func() {
-			So(addr.Addr, ShouldEqual, domainNoPort)
+		Convey(".Host should be set to the original domain", func() {
+			So(addr.Host, ShouldEqual, domainNoPort)
 		})
 
 		Convey(".Port should be set to 8333", func() {
@@ -573,8 +573,8 @@ func TestParseLocalDomain(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeDomain)
 		})
 
-		Convey(".Addr should be set to the original domain", func() {
-			So(addr.Addr, ShouldEqual, localDomainNoPort)
+		Convey(".Host should be set to the original domain", func() {
+			So(addr.Host, ShouldEqual, localDomainNoPort)
 		})
 
 		Convey(".Port should be empty", func() {
@@ -605,8 +605,8 @@ func TestParseLocalDomain(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeDomain)
 		})
 
-		Convey(".Addr should be set to the original domain", func() {
-			So(addr.Addr, ShouldEqual, localDomainNoPort)
+		Convey(".Host should be set to the original domain", func() {
+			So(addr.Host, ShouldEqual, localDomainNoPort)
 		})
 
 		Convey(".Port should be set to 8333", func() {
@@ -642,8 +642,8 @@ func TestParseLocalhost(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeDomain)
 		})
 
-		Convey(".Addr should be set to the original domain", func() {
-			So(addr.Addr, ShouldEqual, localhostNoPort)
+		Convey(".Host should be set to the original domain", func() {
+			So(addr.Host, ShouldEqual, localhostNoPort)
 		})
 
 		Convey(".Port should be empty", func() {
@@ -674,8 +674,8 @@ func TestParseLocalhost(t *testing.T) {
 			So(addr.Type, ShouldEqual, TypeDomain)
 		})
 
-		Convey(".Addr should be set to the original domain", func() {
-			So(addr.Addr, ShouldEqual, localhostNoPort)
+		Convey(".Host should be set to the original domain", func() {
+			So(addr.Host, ShouldEqual, localhostNoPort)
 		})
 
 		Convey(".Port should be set to 8333", func() {

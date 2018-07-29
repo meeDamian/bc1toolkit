@@ -12,6 +12,7 @@ import (
 	"github.com/meeDamian/bc1toolkit/lib/common"
 	"github.com/meeDamian/bc1toolkit/lib/connstring"
 	"github.com/meeDamian/bc1toolkit/lib/help"
+	"github.com/meeDamian/bc1toolkit/lib/ln"
 	"golang.org/x/net/proxy"
 )
 
@@ -98,40 +99,48 @@ func tryToConverse(fn common.SpeakFn, dialer proxy.Dialer, c connstring.ConnStri
 	return version, nil
 }
 
+func infoOrError(explicitlyRequested, testNet bool, fn common.SpeakFn, dialer proxy.Dialer, c connstring.ConnString) (version interface{}) {
+	if !explicitlyRequested && !Opts.AutoNet {
+		return nil
+	}
+
+	version, err := tryToConverse(fn, dialer, c, testNet)
+	if err != nil {
+		return nodeError{c.Raw, err.Error()}
+	}
+
+	return version
+
+}
+
 func checkConnString(dialers common.Dialers, c connstring.ConnString) (found []interface{}, err error) {
 	dialer, err := dialers.Default(c.IsTor(), c.Local)
 	if err != nil {
 		return nil, err
 	}
 
-	found = make([]interface{}, 0)
-
 	if Opts.Network == "btc" || Opts.Network == "all" {
-		if Opts.MainNet || Opts.AutoNet {
-			version, err := tryToConverse(btc.Speak, dialer, c, false)
-			if err != nil {
-				version = nodeError{c.Addr, err.Error()}
-			}
-
-			if version != nil {
-				found = append(found, version)
-			}
+		version := infoOrError(Opts.MainNet, false, btc.Speak, dialer, c)
+		if version != nil {
+			found = append(found, version)
 		}
 
-		if Opts.TestNet || Opts.AutoNet {
-			version, err := tryToConverse(btc.Speak, dialer, c, true)
-			if err != nil {
-				version = nodeError{c.Addr, err.Error()}
-			}
-
-			if version != nil {
-				found = append(found, version)
-			}
+		version = infoOrError(Opts.TestNet, true, btc.Speak, dialer, c)
+		if version != nil {
+			found = append(found, version)
 		}
 	}
 
 	if Opts.Network == "ln" || Opts.Network == "all" {
+		version := infoOrError(Opts.MainNet, false, ln.Speak, dialer, c)
+		if version != nil {
+			found = append(found, version)
+		}
 
+		version = infoOrError(Opts.TestNet, true, ln.Speak, dialer, c)
+		if version != nil {
+			found = append(found, version)
+		}
 	}
 
 	return
@@ -171,7 +180,7 @@ func main() {
 			found, err := checkConnString(dialers, c)
 			if err != nil {
 				found = []interface{}{nodeError{
-					c.Addr,
+					c.Host,
 					err.Error(),
 				}}
 			}

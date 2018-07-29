@@ -26,7 +26,7 @@ const (
 type ConnString struct {
 	Raw    string
 	PubKey string
-	Addr   string
+	Host   string
 	IP     net.IP
 	Port   string
 	Type   int
@@ -51,7 +51,7 @@ func (c ConnString) ToString() (connstring string) {
 		connstring = fmt.Sprintf("%s@", c.PubKey)
 	}
 
-	connstring += c.Addr
+	connstring += c.Host
 
 	if c.Port != "" {
 		connstring += fmt.Sprintf(":%s", c.Port)
@@ -82,19 +82,19 @@ func Parse(connstring string) (c ConnString, err error) {
 	}
 
 	// split address into ip/host and port
-	c.Addr = connstring
+	c.Host = connstring
 	if (strings.Count(connstring, ":") > 1 && strings.Contains(connstring, "[")) || strings.Count(connstring, ":") == 1 {
-		c.Addr, c.Port, err = net.SplitHostPort(connstring)
+		c.Host, c.Port, err = net.SplitHostPort(connstring)
 		if err != nil {
 			return
 		}
 	}
 
 	// process Tor
-	if strings.Contains(c.Addr, onionTld) {
+	if strings.Contains(c.Host, onionTld) {
 		c.Type = TypeTorV2
 
-		if len(c.Addr) == 56+len(onionTld) {
+		if len(c.Host) == 56+len(onionTld) {
 			c.Type = TypeTorV3
 		}
 
@@ -102,7 +102,7 @@ func Parse(connstring string) (c ConnString, err error) {
 	}
 
 	// process IPs
-	c.IP = net.ParseIP(c.Addr)
+	c.IP = net.ParseIP(c.Host)
 	if c.IP != nil {
 		c.Type = TypeIpV4
 
@@ -124,7 +124,7 @@ func Parse(connstring string) (c ConnString, err error) {
 
 	// process domains
 	c.Type = TypeDomain
-	if c.Addr == localhost || strings.Contains(c.Addr, localTld) {
+	if c.Host == localhost || strings.Contains(c.Host, localTld) {
 		c.Local = true
 	}
 

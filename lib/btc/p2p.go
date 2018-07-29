@@ -81,9 +81,7 @@ func buildVersionHeader(msg []byte, testNet bool) []byte {
 		magic = TestNet
 	}
 
-	first := sha256.Sum256(msg)
-	second := sha256.Sum256(first[:])
-	checksum := second[0:4]
+	checksum := DoubleSha256(msg)[0:4]
 
 	common.Log.Debugf("Building header: magic:%x  cmd:%s  len:%d  checksum:%v", magic, "version", len(msg), checksum)
 
@@ -217,7 +215,7 @@ func readVersionMsg(msg []byte) (btcVersion BitcoinVersion) {
 }
 
 func sendMessage(dialer proxy.Dialer, addr connstring.ConnString, header, msg []byte) (btcVersion BitcoinVersion, err error) {
-	conn, err := dialer.Dial("tcp", net.JoinHostPort(addr.Addr, addr.Port))
+	conn, err := dialer.Dial("tcp", net.JoinHostPort(addr.Host, addr.Port))
 	if err != nil {
 		return btcVersion, errors.Wrap(err, "can't connect to peer")
 	}
