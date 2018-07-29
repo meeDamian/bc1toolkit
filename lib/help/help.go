@@ -1,0 +1,74 @@
+package help
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/jessevdk/go-flags"
+	"github.com/meeDamian/bc1toolkit/lib/common"
+	"github.com/sirupsen/logrus"
+)
+
+type Opts struct {
+	Version  bool     `long:"version" short:"v" description:"Show version and exit"`
+	Verbose  []bool   `long:"verbose" short:"V" description:"Enable verbose logging. Specify twice to increase verbosity"`
+	TorMode  string   `long:"tor-mode" description:"When to use Tor. \"auto\" - Tor with clearnet fallback. \"native\" - .onion addresses only." choice:"always" choice:"auto" choice:"native" choice:"never" default:"auto"`
+	TorSocks []string `long:"tor" description:"\"host:port\" to Tor's SOCKS proxy" default:"localhost:9050" default:"localhost:9150" default-mask:"localhost:9050 or localhost:9150"`
+}
+
+var (
+	buildStamp,
+	gitHash,
+	builder string
+
+	opts Opts
+
+	parser = flags.NewParser(&opts, flags.Default)
+)
+
+func Customize(usage, description, name string, data interface{}) {
+	if usage != "" {
+		parser.Usage = usage
+	}
+
+	if description != "" {
+		parser.LongDescription = description
+	}
+
+	if name != "" {
+		parser.AddGroup(name, "", data)
+	}
+}
+
+func Parse() ([]string, Opts) {
+	args, err := parser.Parse()
+	if err != nil {
+		// show help message and exit
+		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+			os.Exit(0)
+		}
+
+		fmt.Println("Unable to parse flags:", err.Error())
+		os.Exit(1)
+	}
+
+	if opts.Version {
+		fmt.Printf("Git Commit Hash: %s\nUTC build time : %s\nBuilt by       : %s\n", gitHash, buildStamp, builder)
+		os.Exit(0)
+	}
+
+	switch len(opts.Verbose) {
+	case 0:
+		common.Log.SetLevel(logrus.WarnLevel)
+
+	case 1:
+		common.Log.SetLevel(logrus.InfoLevel)
+
+	case 2:
+		fallthrough
+	default: // more than 2
+		common.Log.SetLevel(logrus.DebugLevel)
+	}
+
+	return args, opts
+}

@@ -1,20 +1,15 @@
 package main
 
-import (
-	"github.com/meeDamian/bc1toolkit/lib/common"
-)
-
 var Opts struct {
 	Blab string `short:"b" long:"blab" description:"Blab blab blab"`
 }
 
 func init() {
-	common.Parser.AddGroup("bla", "blabla", &Opts)
-	common.Parser.Parse()
+	//common.Define("bla", &Opts)
+	//common.Parse()
 }
 
 func main() {
-	common.DefaultActions()
 
 	//			func() string {
 	//	return fmt.Sprintf("Usage of %s:\n", os.Args[0])
