@@ -9,7 +9,7 @@ BUILD_FLAGS="-X ${VERSION_STAMP} -X ${VERSION_HASH} -X ${VERSION_BUILDER}"
 SRC_LIB := $(shell find lib -type f -name '*.go')
 
 # currently supported platforms
-platforms = windows-amd64.exe darwin-amd64 linux-amd64 linux-arm
+platforms = windows-amd64.exe darwin-amd64 linux-amd64 linux-arm freebsd-amd64
 
 
 #
