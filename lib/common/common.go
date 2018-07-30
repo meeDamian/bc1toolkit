@@ -3,7 +3,6 @@ package common
 import (
 	"path"
 
-	"github.com/meeDamian/bc1toolkit/lib/connstring"
 	"github.com/meeDamian/bc1toolkit/lib/tor"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -12,15 +11,11 @@ import (
 
 const cacheDir = "com.meedamian.bc1toolkit"
 
-type (
-	Dialers struct {
-		Tor      proxy.Dialer
-		ClearNet proxy.Dialer
-		mode     string
-	}
-
-	SpeakFn func(dialer proxy.Dialer, addr connstring.ConnString, testNet bool) (interface{}, error)
-)
+type Dialers struct {
+	Tor      proxy.Dialer
+	ClearNet proxy.Dialer
+	mode     string
+}
 
 // TODO: deprecated
 var Log = logrus.New()

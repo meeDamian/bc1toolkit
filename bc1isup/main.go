@@ -12,16 +12,13 @@ import (
 	"github.com/meeDamian/bc1toolkit/lib/common"
 	"github.com/meeDamian/bc1toolkit/lib/connstring"
 	"github.com/meeDamian/bc1toolkit/lib/help"
-	"github.com/meeDamian/bc1toolkit/lib/ln"
 	"golang.org/x/net/proxy"
 )
 
-// TODO: LN nodes
-// TODO: minimise requests
-// TODO: README
-// TODO: cache LN pubkeys per node
+const description = `Checks addresses for running Bitcoin nodes. When addresses are both piped-in and provided at command line, piped ones are first.
 
-const description = `Check conn-strings for running Bitcoin and LN nodes.`
+Each address provided outputs its own line with corresponding node status info (customizable with --output=?).
+Exit code of 0 is returned only if each address provided had at least one running node.`
 
 type (
 	nodeError struct {
@@ -37,12 +34,10 @@ type (
 
 var (
 	Opts struct {
-		Network     string `long:"network" short:"N" description:"Check against specified network only" choice:"btc" choice:"ln" choice:"all" default:"all"`
-		TestNet     bool   `long:"testnet" short:"T" description:"Check for testnet"`
-		MainNet     bool   `long:"mainnet" short:"M" description:"Check for mainnet"`
-		AutoNet     bool   `no-flag:"can be used to determine if check was requested or is an auto-fallback"`
-		PubKeyCache bool   `long:"no-pubkey-cache" description:"Do not cache Lightning Network pubkey for future runs. Default cache location is ~/.cache/bc1toolkit/ln-nodes"`
-		Output      string `long:"output" short:"o" description:"Output mode. 'json' returns JSON array for each input address. 'simple' returns up/down per input address. 'none' returns no output, but returns exit code 0 if all connstrings were up and 1 if any failed." default:"json" choice:"json" choice:"simple" choice:"none"`
+		TestNet bool   `long:"testnet" short:"T" description:"Check for testnet node"`
+		MainNet bool   `long:"mainnet" short:"M" description:"Check for mainnet node"`
+		AutoNet bool   `no-flag:"can be used to determine if check was requested or is an auto-fallback"`
+		Output  string `long:"output" short:"o" description:"Choose line format: 'json' for JSON array. 'simple' for a single \"up\" or \"down\". 'none' for no output, and only exit code" default:"json" choice:"json" choice:"simple" choice:"none"`
 	}
 
 	connStrings []string
@@ -52,7 +47,7 @@ var (
 
 func init() {
 	help.Customize(
-		"[OPTIONS] [pubkey@](domain|IP)[:port] ...",
+		"[OPTIONS] (domain|IP)[:port] ...",
 		description,
 		"bc1isup", &Opts,
 	)
@@ -85,27 +80,18 @@ func init() {
 	}
 }
 
-func tryToConverse(fn common.SpeakFn, dialer proxy.Dialer, c connstring.ConnString, testNet bool) (interface{}, error) {
-	version, err := fn(dialer, c, testNet)
-	if err != nil {
-		if Opts.AutoNet {
-			common.Log.Debugln(err)
-			return nil, nil
-		}
-
-		return nil, err
-	}
-
-	return version, nil
-}
-
-func infoOrError(explicitlyRequested, testNet bool, fn common.SpeakFn, dialer proxy.Dialer, c connstring.ConnString) (version interface{}) {
+func attemptCommunication(explicitlyRequested, testNet bool, dialer proxy.Dialer, c connstring.ConnString) (version interface{}) {
 	if !explicitlyRequested && !Opts.AutoNet {
 		return nil
 	}
 
-	version, err := tryToConverse(fn, dialer, c, testNet)
+	version, err := btc.Speak(dialer, c, testNet)
 	if err != nil {
+		if Opts.AutoNet {
+			common.Log.Debugln(err)
+			return nil
+		}
+
 		return nodeError{c.Raw, err.Error()}
 	}
 
@@ -119,28 +105,14 @@ func checkConnString(dialers common.Dialers, c connstring.ConnString) (found []i
 		return nil, err
 	}
 
-	if Opts.Network == "btc" || Opts.Network == "all" {
-		version := infoOrError(Opts.MainNet, false, btc.Speak, dialer, c)
-		if version != nil {
-			found = append(found, version)
-		}
-
-		version = infoOrError(Opts.TestNet, true, btc.Speak, dialer, c)
-		if version != nil {
-			found = append(found, version)
-		}
+	version := attemptCommunication(Opts.MainNet, false, dialer, c)
+	if version != nil {
+		found = append(found, version)
 	}
 
-	if Opts.Network == "ln" || Opts.Network == "all" {
-		version := infoOrError(Opts.MainNet, false, ln.Speak, dialer, c)
-		if version != nil {
-			found = append(found, version)
-		}
-
-		version = infoOrError(Opts.TestNet, true, ln.Speak, dialer, c)
-		if version != nil {
-			found = append(found, version)
-		}
+	version = attemptCommunication(Opts.TestNet, true, dialer, c)
+	if version != nil {
+		found = append(found, version)
 	}
 
 	return
@@ -174,14 +146,13 @@ func main() {
 		Opts.AutoNet = true
 	}
 
-	// skip Tor altogether whenever possible
+	// skip Tor altogether when possible
 	if onlyLocal {
 		opts.TorMode = "never"
 
 	} else if opts.TorMode == "native" && noTor {
 		opts.TorMode = "never"
 	}
-
 
 	dialers, err := common.GetDialers(opts.TorMode, opts.TorSocks)
 	if err != nil {
