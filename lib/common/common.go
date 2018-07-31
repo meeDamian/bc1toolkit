@@ -11,14 +11,39 @@ import (
 
 const cacheDir = "com.meedamian.bc1toolkit"
 
-type Dialers struct {
-	Tor      proxy.Dialer
-	ClearNet proxy.Dialer
-	mode     string
+type (
+	Dialers struct {
+		Tor      proxy.Dialer
+		ClearNet proxy.Dialer
+		mode     string
+	}
+
+	logger struct {
+		name  string
+		level logrus.Level
+	}
+)
+
+func (l *logger) Get() *logrus.Entry {
+	e := logrus.New()
+	e.SetLevel(l.level)
+	name := "unknown"
+	if l.name != "" {
+		name = l.name
+	}
+
+	return e.WithField("binary", name)
 }
 
-// TODO: deprecated
-var Log = logrus.New()
+func (l *logger) Name(name string) {
+	l.name = name
+}
+
+func (l *logger) SetLevel(level logrus.Level) {
+	l.level = level
+}
+
+var Logger logger
 
 func (d Dialers) Default(isTor, isLocal bool) (proxy.Dialer, error) {
 	if isLocal {
@@ -48,10 +73,6 @@ func (d Dialers) Default(isTor, isLocal bool) (proxy.Dialer, error) {
 	return d.ClearNet, nil
 }
 
-func GetLogger(binaryName string) *logrus.Entry {
-	return logrus.New().WithField("binary", binaryName)
-}
-
 func GetDialers(torMode string, torSocks []string) (d Dialers, _ error) {
 	d = Dialers{
 		mode:     torMode,
@@ -68,7 +89,7 @@ func GetDialers(torMode string, torSocks []string) (d Dialers, _ error) {
 			return Dialers{}, errors.New("can't connect to Tor & --tor-mode=always set")
 		}
 
-		Log.Debugln("Tor connection not available, using clearnet only.", err)
+		Logger.Get().WithError(err).Debugln("--tor-mode=auto and not Tor connection available: falling back to Clearnet only")
 	}
 
 	d.Tor = torDialer

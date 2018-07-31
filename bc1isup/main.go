@@ -39,13 +39,15 @@ var (
 		AutoNet bool   `no-flag:"can be used to determine if check was requested or is an auto-fallback"`
 		Output  string `long:"output" short:"o" description:"Choose line format: 'json' for JSON array. 'simple' for a single \"up\" or \"down\". 'none' for no output, and only exit code" default:"json" choice:"json" choice:"simple" choice:"none"`
 	}
-
-	connStrings []string
-
 	opts help.Opts
+
+	addresses []string
 )
 
+// NOTE: all errors returned here are quoted strings to preserve `jq` compatibility
 func init() {
+	common.Logger.Name("bc1isup")
+
 	help.Customize(
 		"[OPTIONS] (domain|IP)[:port] ...",
 		description,
@@ -53,29 +55,35 @@ func init() {
 	)
 
 	// read parameters passed to a binary
-	connStrings, opts = help.Parse()
+	addresses, opts = help.Parse()
 
 	// check for stuff being piped-in
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		rawStdin, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf(`"%s"\n`, err)
 			os.Exit(1)
 		}
 
-		// process input, split into addresses and strip possible quotes
-		var stdinConnStrings []string
-		for _, a := range strings.Split(strings.TrimSpace(string(rawStdin)), "\n") {
-			stdinConnStrings = append(stdinConnStrings, strings.Replace(a, "\"", "", -1))
+		// process input, split into addresses and trim possible whitespaces & quotes
+		var stdinAddresses []string
+		for _, a := range strings.Split(string(rawStdin), "\n") {
+			// if there are extra whitespaces in the source file
+			trimmedAddress := strings.TrimSpace(a)
+
+			// if addresses are piped from `jq` w/o `-r` provided
+			trimmedAddress = strings.Trim(trimmedAddress, "\"")
+
+			stdinAddresses = append(stdinAddresses, trimmedAddress)
 		}
 
 		// pipe data first, and then command ones seems more natural
-		connStrings = append(stdinConnStrings, connStrings...)
+		addresses = append(stdinAddresses, addresses...)
 	}
 
-	if len(connStrings) < 1 {
-		fmt.Println("At least one node conn-string needs to be provided")
+	if len(addresses) < 1 {
+		fmt.Println(`"At least one IP address or hostname needs to be provided"`)
 		os.Exit(1)
 	}
 }
@@ -88,7 +96,7 @@ func attemptCommunication(explicitlyRequested, testNet bool, dialer proxy.Dialer
 	version, err := btc.Speak(dialer, c, testNet)
 	if err != nil {
 		if Opts.AutoNet {
-			common.Log.Debugln(err)
+			common.Logger.Get().Debugln(err)
 			return nil
 		}
 
@@ -119,14 +127,13 @@ func checkConnString(dialers common.Dialers, c connstring.ConnString) (found []i
 }
 
 func main() {
-	onlyLocal := true
-	noTor := true
+	onlyLocal, noTor := true, true
 
 	var cs []connstring.ConnString
-	for _, c := range connStrings {
+	for _, c := range addresses {
 		conn, err := connstring.Parse(c)
 		if err != nil {
-			fmt.Printf("%s is not valid: %v\n", c, err)
+			fmt.Printf(`"%s is not valid: %v"\n`, c, err)
 			os.Exit(1)
 		}
 
@@ -148,15 +155,18 @@ func main() {
 
 	// skip Tor altogether when possible
 	if onlyLocal {
+		common.Logger.Get().Debugln("only local addresses provided: disabling To completely")
 		opts.TorMode = "never"
 
 	} else if opts.TorMode == "native" && noTor {
+		common.Logger.Get().Debugln("--tor-mode=native set and no Tor addresses provided: disabling To completely")
 		opts.TorMode = "never"
 	}
 
+	// Return only dialers that will be used in requests
 	dialers, err := common.GetDialers(opts.TorMode, opts.TorSocks)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf(`"%s"\n`, err)
 		os.Exit(1)
 	}
 
@@ -164,6 +174,8 @@ func main() {
 	wg.Add(len(cs) + 1) // all checks + the final results aggregation goroutine
 
 	results := make(chan result, len(cs))
+
+	exitCode := 0
 
 	// launch all requested checks in parallel
 	for id, c := range cs {
@@ -174,6 +186,17 @@ func main() {
 					c.Host,
 					err.Error(),
 				}}
+
+			} else if found == nil {
+				exitCode = 1
+
+				found = []interface{}{}
+			}
+
+			for _, x := range found {
+				if _, ok := x.(nodeError); ok {
+					exitCode = 1
+				}
 			}
 
 			results <- result{id, found}
@@ -182,7 +205,7 @@ func main() {
 		}(id, c)
 	}
 
-	// get all checks and output them in the same order as provided
+	// receive all checks and output them in the same order as provided
 	go func() {
 		received := make(map[int][]interface{})
 		last, max := 0, len(cs)
@@ -197,17 +220,41 @@ func main() {
 						break
 					}
 
-					if len(item) == 0 {
-						// TODO: add nothing-found error(?)
-					}
-
-					v, err := json.Marshal(item)
-					if err != nil {
-						common.Log.Errorln("unable to marshall response…")
-					}
-
-					fmt.Println(string(v))
 					delete(received, last)
+
+					// output is irrelevant. Just wait until all are received
+					if Opts.Output == "none" {
+						continue
+					}
+
+					if Opts.Output == "simple" {
+						if len(item) == 0 {
+							fmt.Println("down")
+							continue
+						}
+
+						out := "up"
+						for _, x := range item {
+							if _, ok := x.(nodeError); !ok {
+								continue
+							}
+							out = "down"
+						}
+						fmt.Println(out)
+					}
+
+					if Opts.Output == "json" {
+						v, err := json.Marshal(item)
+						if err != nil {
+							exitCode = 1
+
+							common.Logger.Get().Errorf("unable to marshall response: %#v", item)
+							fmt.Println(`[{"error": "unable to marshall response"}]`)
+							continue
+						}
+
+						fmt.Println(string(v))
+					}
 				}
 			}
 
@@ -220,4 +267,5 @@ func main() {
 	}()
 
 	wg.Wait()
+	os.Exit(exitCode)
 }

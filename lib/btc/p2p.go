@@ -13,6 +13,7 @@ import (
 	"github.com/meeDamian/bc1toolkit/lib/common"
 	"github.com/meeDamian/bc1toolkit/lib/connstring"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/proxy"
 )
 
@@ -83,7 +84,12 @@ func buildVersionHeader(msg []byte, testNet bool) []byte {
 
 	checksum := DoubleSha256(msg)[0:4]
 
-	common.Log.Debugf("Building header: magic:%x  cmd:%s  len:%d  checksum:%v", magic, "version", len(msg), checksum)
+	common.Logger.Get().WithFields(logrus.Fields{
+		"magic":    fmt.Sprintf("%x", magic),
+		"cmd":      "version",
+		"len":      len(msg),
+		"checksum": checksum,
+	}).Debugf("building header…")
 
 	b := bytes.NewBuffer(make([]byte, 0, 24))
 
@@ -215,68 +221,85 @@ func readVersionMsg(msg []byte) (btcVersion BitcoinVersion) {
 }
 
 func sendMessage(dialer proxy.Dialer, addr connstring.ConnString, header, msg []byte) (btcVersion BitcoinVersion, err error) {
+	log := common.Logger.Get().WithField("address", addr.Raw)
+
+	log.Debugln("connecting…")
 	conn, err := dialer.Dial("tcp", net.JoinHostPort(addr.Host, addr.Port))
 	if err != nil {
 		return btcVersion, errors.Wrap(err, "can't connect to peer")
 	}
-	common.Log.Debugln("connected")
+	log.Debugln("connection ok")
 
 	conn.SetDeadline(time.Now().Add(defaultTimeout))
+	log.Debugf("read/write deadline set to %v", defaultTimeout)
 
 	defer conn.Close()
 
 	// write header
+	log.WithField("header", fmt.Sprintf("%02x", header)).Debugln("sending header…")
 	_, err = conn.Write(header)
 	if err != nil {
 		return btcVersion, errors.Wrap(err, "can't send header")
 	}
-	common.Log.Debugf("header sent: %02x", header)
+	log.Debugln("header sent")
 
 	// write payload
+	log.WithField("payload", fmt.Sprintf("%02x", msg)).Debugln("sending payload…")
 	_, err = conn.Write(msg)
 	if err != nil {
-		fmt.Println("couldn't send payload", err)
 		return btcVersion, errors.Wrap(err, "can't send payload")
 	}
-	common.Log.Debugf("payload sent: %02x", msg)
+	log.Debugln("payload sent")
 
 	// read header
 	var respHeader [HeaderSize]byte
 	_, err = conn.Read(respHeader[:])
 	if err != nil {
-		return btcVersion, errors.Wrap(err, "can't read header")
+		return btcVersion, errors.Wrap(err, "can't read peer header")
 	}
-	common.Log.Debugf("header received: %02x", respHeader)
+	log.WithField("header", fmt.Sprintf("%02x", respHeader)).Debugln("peer header received")
 
 	magic, command, length, checksum := readHeader(respHeader)
-	common.Log.Debugf("header processed: magic:%02x  cmd:%s  len:%d  checksum:%v", magic, command, length, checksum)
+	log.WithFields(logrus.Fields{
+		"magic":    fmt.Sprintf("%x", magic),
+		"cmd":      command,
+		"len":      length,
+		"checksum": checksum,
+	}).Debugln("peer header processed")
 
 	if magic != MainNet && magic != TestNet {
-		return btcVersion, errors.Wrap(err, fmt.Sprintf("a non-Bitcoin network magic detected (%02x)", magic))
+		return btcVersion, errors.Wrapf(err, "peer node responded with a non-Bitcoin network magic (%02x)", magic)
 	}
 
 	if command != VersionCommand {
-		return btcVersion, errors.New("node failed to correctly reply")
+		return btcVersion, errors.New("peer node failed to reply correctly")
 	}
 
 	if length > MaxPayloadLength {
-		return btcVersion, errors.New("Possibly a malicious node detected")
+		return btcVersion, errors.New("possibly a malicious peer node detected")
 	}
 
 	respMsg := make([]byte, length)
 	_, err = conn.Read(respMsg[:])
 	if err != nil {
-		return btcVersion, errors.Wrap(err, "can't read payload")
+		return btcVersion, errors.Wrap(err, "can't read peer payload")
 	}
-	common.Log.Debugf("payload received: %02x\n", respMsg)
+	log.WithField("payload", fmt.Sprintf("%02x", respMsg)).Debugln("peer payload received")
 
 	first := sha256.Sum256(respMsg[:])
 	second := sha256.Sum256(first[:])
 	if !bytes.Equal(checksum[:], second[0:4]) {
-		return btcVersion, errors.New("payload checksum does not match")
+		return btcVersion, errors.New("received payload checksum does not match")
 	}
 
-	return readVersionMsg(respMsg), nil
+	nodeInfo := readVersionMsg(respMsg)
+	log.WithFields(logrus.Fields{
+		"version":   nodeInfo.Version,
+		"useragent": nodeInfo.UserAgent,
+		"lastblock": nodeInfo.LastBlock,
+	}).Debugln("peer payload processed")
+
+	return nodeInfo, nil
 }
 
 func Speak(dialer proxy.Dialer, addr connstring.ConnString, testNet bool) (interface{}, error) {

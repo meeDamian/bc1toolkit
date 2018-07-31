@@ -59,15 +59,15 @@ func Parse() ([]string, Opts) {
 
 	switch len(opts.Verbose) {
 	case 0:
-		common.Log.SetLevel(logrus.WarnLevel)
+		common.Logger.SetLevel(logrus.WarnLevel)
 
 	case 1:
-		common.Log.SetLevel(logrus.InfoLevel)
+		common.Logger.SetLevel(logrus.InfoLevel)
 
 	case 2:
 		fallthrough
 	default: // more than 2
-		common.Log.SetLevel(logrus.DebugLevel)
+		common.Logger.SetLevel(logrus.DebugLevel)
 	}
 
 	return args, opts
