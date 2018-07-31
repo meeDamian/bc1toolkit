@@ -42,6 +42,7 @@ dist: release/bc1isup
 	zip release/bc1toolkit-linux.zip $(wildcard release/*-linux-amd64)
 	zip release/bc1toolkit-raspberry.zip $(wildcard release/*-linux-arm)
 	zip release/bc1toolkit-windows.zip $(wildcard release/*-windows-amd64.exe)
+	zip release/bc1toolkit-freebsd.zip $(wildcard release/*-freebsd-amd64)
 
 
 clean:
