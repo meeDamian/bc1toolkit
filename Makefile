@@ -7,37 +7,43 @@ VERSION_BUILDER="${PKG}/lib/help.builder=$$(whoami)@$$(hostname)"
 BUILD_FLAGS="-X ${VERSION_STAMP} -X ${VERSION_HASH} -X ${VERSION_BUILDER}"
 
 SRC_LIB := $(shell find lib -type f -name '*.go')
+VENDOR_LIB := $(shell find vendor -type f -name '*.go')
+ALL_SRC := $(shell find . -type f -name '*.go')
 
 # currently supported platforms
 platforms = windows-amd64.exe darwin-amd64 linux-amd64 linux-arm freebsd-amd64
+binaries = bc1isup bc1tx
 
 
 #
 ## Simple builds for the current platform
 #
-bin/bc1isup: bc1isup/main.go $(SRC_LIB)
+# TODO: collapse all into one
+bin/bc1isup: bc1isup/main.go $(SRC_LIB) $(VENDOR_LIB)
 	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1isup
 
-all: bin/bc1isup
+bin/bc1tx: bc1tx/main.go $(SRC_LIB) $(VENDOR_LIB)
+	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1tx
+
+all: bin/bc1isup bin/bc1tx
 
 
 #
-## build for all platforms for a given binary
+## build for all platforms for each binary
 #
-bc1isup = $(addprefix release/bc1isup-,$(platforms))
-$(bc1isup): bc1isup/main.go $(SRC_LIB)
+# combine all binaries with all platforms they'll be built for
+allTargets = $(foreach binary,$(addprefix release/,$(binaries)),$(addprefix $(binary)-,$(platforms)))
+$(allTargets): is-git-clean $(ALL_SRC)
 	env GOARCH=$(subst .exe,,$(lastword $(subst -, ,$@))) \
 	GOOS=$(lastword $(filter-out $(lastword $(subst -, ,$@)), $(subst -, ,$@))) \
 	GOARM=$(subst arm,5,$(filter arm,$(subst .exe,,$(lastword $(subst -, ,$@))))) \
-	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1isup
-
-release/bc1isup: is-git-clean $(bc1isup)
+	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/$(firstword $(subst -, ,$(subst release/,,$@)))
 
 is-git-clean:
 	git diff-index --quiet HEAD
 
 
-dist: release/bc1isup
+dist: $(allTargets)
 	zip release/bc1toolkit-mac.zip $(wildcard release/*-darwin-amd64)
 	zip release/bc1toolkit-linux.zip $(wildcard release/*-linux-amd64)
 	zip release/bc1toolkit-raspberry.zip $(wildcard release/*-linux-arm)
@@ -53,11 +59,9 @@ clean:
 install:
 	go install -v -ldflags ${BUILD_FLAGS} ${PKG}/bc1isup
 
-# TODO: uninstall:
+# TODO: uninstall target
 
-.PHONY: all is-git-clean dist clean install \
-		release/bc1isup \
-		release/bc1toolkit-mac.zip
+.PHONY: all is-git-clean dist clean install
 
 
 
