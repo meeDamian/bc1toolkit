@@ -15,10 +15,14 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-const description = `Checks addresses for running Bitcoin nodes. When addresses are both piped-in and provided at command line, piped ones are first.
+const (
+	description = `Checks addresses for running Bitcoin nodes. When addresses are both piped-in and provided at command line, piped ones are first.
 
-Each address provided outputs its own line with corresponding node status info (customizable with --output=?).
+Each address provided, outputs its own line with corresponding node status info (customizable with --output=?).
 Exit code of 0 is returned only if each address provided had at least one running node.`
+
+	torBehaviour = `try using Tor, if not available, fall back to clearnet.`
+)
 
 type (
 	nodeError struct {
@@ -51,6 +55,7 @@ func init() {
 	help.Customize(
 		"[OPTIONS] (domain|IP)[:port] ...",
 		description,
+		torBehaviour,
 		"bc1isup", &Opts,
 	)
 

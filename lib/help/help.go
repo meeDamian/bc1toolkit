@@ -12,7 +12,7 @@ import (
 type Opts struct {
 	Version  bool     `long:"version" short:"v" description:"Show version and exit"`
 	Verbose  []bool   `long:"verbose" short:"V" description:"Enable verbose logging. Specify twice to increase verbosity"`
-	TorMode  string   `long:"tor-mode" description:"When to use Tor. \"auto\" - Tor with clearnet fallback. \"native\" - .onion addresses only." choice:"always" choice:"auto" choice:"native" choice:"never" default:"auto"`
+	TorMode  string   `long:"tor-mode" description:"When to use Tor. \"native\" - .onion addresses only. \"auto\" - see above for details." choice:"always" choice:"auto" choice:"native" choice:"never" default:"auto"`
 	TorSocks []string `long:"tor" description:"\"host:port\" to Tor's SOCKS proxy" default:"localhost:9050" default:"localhost:9150" default-mask:"localhost:9050 or localhost:9150"`
 }
 
@@ -26,12 +26,16 @@ var (
 	parser = flags.NewParser(&opts, flags.Default)
 )
 
-func Customize(usage, description, name string, data interface{}) {
+func Customize(usage, description, torAutoBehaviour, name string, data interface{}) {
 	if usage != "" {
 		parser.Usage = usage
 	}
 
 	if description != "" {
+		if torAutoBehaviour != "" {
+			description = fmt.Sprintf("%s\n\nTor \"auto\" behaviour: %s", description, torAutoBehaviour)
+		}
+
 		parser.LongDescription = description
 	}
 
