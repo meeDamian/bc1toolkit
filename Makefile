@@ -11,9 +11,8 @@ VENDOR_LIB := $(shell find vendor -type f -name '*.go')
 ALL_SRC := $(shell find . -type f -name '*.go')
 
 # currently supported platforms
-platforms = windows-amd64.exe darwin-amd64 linux-amd64 linux-arm freebsd-amd64
+platforms = windows-amd64 darwin-amd64 linux-amd64 linux-arm freebsd-amd64
 binaries = bc1isup
-#bc1tx
 
 
 #
@@ -33,28 +32,32 @@ all: bin/bc1isup bin/bc1tx
 ## build for all platforms for each binary
 #
 # combine all binaries with all platforms they'll be built for
-allTargets = $(foreach binary,$(addprefix release/,$(binaries)),$(addprefix $(binary)-,$(platforms)))
-$(allTargets): is-git-clean $(ALL_SRC)
-	env GOARCH=$(subst .exe,,$(lastword $(subst -, ,$@))) \
-	GOOS=$(lastword $(filter-out $(lastword $(subst -, ,$@)), $(subst -, ,$@))) \
-	GOARM=$(subst arm,5,$(filter arm,$(subst .exe,,$(lastword $(subst -, ,$@))))) \
-	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/$(firstword $(subst -, ,$(subst release/,,$@)))
+tmpTargets = $(addprefix dist/,$(foreach platform,$(platforms),$(addprefix $(platform)/,$(binaries))))
+
+# add `.exe` to windows binary. Thanks, Windows.
+allTargets = $(filter-out dist/windows%,$(tmpTargets)) $(addsuffix .exe,$(filter dist/windows%,$(tmpTargets)))
+$(allTargets): $(ALL_SRC)
+	env GOARCH=$(word 3,$(subst /, ,$(subst -, ,$@))) \
+	GOOS=$(word 2,$(subst /, ,$(subst -, ,$@))) \
+	GOARM=$(subst arm,5,$(filter arm,$(word 3,$(subst /, ,$(subst -, ,$@))))) \
+	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/$(lastword $(subst .exe,,$(subst /, ,$@)))
+
 
 is-git-clean:
 	git diff-index --quiet HEAD
 
 
 dist: clean $(allTargets)
-	zip release/bc1toolkit-mac.zip $(wildcard release/*-darwin-amd64)
-	zip release/bc1toolkit-linux.zip $(wildcard release/*-linux-amd64)
-	zip release/bc1toolkit-raspberry.zip $(wildcard release/*-linux-arm)
-	zip release/bc1toolkit-windows.zip $(wildcard release/*-windows-amd64.exe)
-	zip release/bc1toolkit-freebsd.zip $(wildcard release/*-freebsd-amd64)
+	zip -j dist/bc1toolkit-mac.zip dist/darwin-amd64/*
+	zip -j dist/bc1toolkit-linux.zip dist/linux-amd64/*
+	zip -j dist/bc1toolkit-raspberry.zip dist/linux-arm/*
+	zip -j dist/bc1toolkit-windows.zip dist/windows-amd64/*
+	zip -j dist/bc1toolkit-freebsd.zip dist/freebsd-amd64/*
 
 
 clean:
 	rm -f bin/*
-	rm -f release/*
+	rm -rf dist/*
 
 
 install:
