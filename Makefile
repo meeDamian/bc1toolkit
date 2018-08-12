@@ -44,7 +44,7 @@ is-git-clean:
 	git diff-index --quiet HEAD
 
 
-dist: $(allTargets)
+dist: clean $(allTargets)
 	zip release/bc1toolkit-mac.zip $(wildcard release/*-darwin-amd64)
 	zip release/bc1toolkit-linux.zip $(wildcard release/*-linux-amd64)
 	zip release/bc1toolkit-raspberry.zip $(wildcard release/*-linux-arm)
