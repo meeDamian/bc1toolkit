@@ -4,7 +4,7 @@ VERSION_STAMP="${PKG}/lib/help.buildStamp=$$(date -u '+%Y-%m-%d_%I:%M:%S%p')"
 VERSION_HASH="${PKG}/lib/help.gitHash=$$(git rev-parse HEAD)"
 VERSION_BUILDER="${PKG}/lib/help.builder=$$(whoami)@$$(hostname)"
 
-BUILD_FLAGS="-X ${VERSION_STAMP} -X ${VERSION_HASH} -X ${VERSION_BUILDER}"
+BUILD_FLAGS="-s -w -X ${VERSION_STAMP} -X ${VERSION_HASH} -X ${VERSION_BUILDER}"
 
 SRC_LIB := $(shell find lib -type f -name '*.go')
 VENDOR_LIB := $(shell find vendor -type f -name '*.go')
@@ -47,7 +47,7 @@ is-git-clean:
 	git diff-index --quiet HEAD
 
 
-dist: clean $(allTargets)
+dist: is-git-clean clean $(allTargets)
 	zip -j dist/bc1toolkit-mac.zip dist/darwin-amd64/*
 	zip -j dist/bc1toolkit-linux.zip dist/linux-amd64/*
 	zip -j dist/bc1toolkit-raspberry.zip dist/linux-arm/*
