@@ -12,7 +12,8 @@ ALL_SRC := $(shell find . -type f -name '*.go')
 
 # currently supported platforms
 platforms = windows-amd64.exe darwin-amd64 linux-amd64 linux-arm freebsd-amd64
-binaries = bc1isup bc1tx
+binaries = bc1isup
+#bc1tx
 
 
 #
