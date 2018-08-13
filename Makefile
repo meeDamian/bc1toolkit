@@ -56,6 +56,9 @@ is-git-clean:
 git-tag:
 	git tag -sa ${VERSION} -m "${VERSION}"
 
+git-push-tag:
+	git push origin $(VERSION)
+
 
 releases/$(VERSION):
 	[ ! -d $@ ]
@@ -78,7 +81,7 @@ releases/$(VERSION)/bc1toolkit-$(VERSION)-freebsd.zip:
 
 
 releases = $(addsuffix .zip,$(addprefix releases/$(VERSION)/bc1toolkit-$(VERSION)-,mac linux raspberry windows freebsd))
-dist: is-git-clean git-tag releases/$(VERSION) clean $(allTargets) $(releases)
+dist: is-git-clean git-tag releases/$(VERSION) clean $(allTargets) $(releases) git-push-tag
 	@echo "\n\trelease ${VERSION} complete and files are in $</*\n"
 
 
@@ -92,7 +95,7 @@ install:
 
 # TODO: uninstall target
 
-.PHONY: all is-git-clean git-tag dist clean install
+.PHONY: all is-git-clean git-tag git-push-tag dist clean install
 
 
 
