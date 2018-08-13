@@ -42,6 +42,14 @@ type BitcoinVersion struct {
 
 var defaultTimeout = time.Duration(5 * time.Second)
 
+func getNetworkMagic(testNet bool) uint32 {
+	if testNet {
+		return TestNet
+	}
+
+	return MainNet
+}
+
 func buildNodeAddr(services uint64, ip net.IP, port string) []byte {
 	var bw bytes.Buffer
 
@@ -77,10 +85,7 @@ func readNodeAddr(b []byte) (services uint64, ip net.IP, port uint16) {
 }
 
 func buildVersionHeader(msg []byte, testNet bool) []byte {
-	magic := MainNet
-	if testNet {
-		magic = TestNet
-	}
+	magic := getNetworkMagic(testNet)
 
 	checksum := DoubleSha256(msg)[0:4]
 
@@ -220,7 +225,7 @@ func readVersionMsg(msg []byte) (btcVersion BitcoinVersion) {
 	return
 }
 
-func sendMessage(dialer proxy.Dialer, addr connstring.ConnString, header, msg []byte) (btcVersion BitcoinVersion, err error) {
+func sendMessage(dialer proxy.Dialer, addr connstring.ConnString, header, msg []byte, testNet bool) (btcVersion BitcoinVersion, err error) {
 	log := common.Logger.Get().WithField("address", addr.Raw)
 
 	log.Debugln("connecting…")
@@ -268,7 +273,11 @@ func sendMessage(dialer proxy.Dialer, addr connstring.ConnString, header, msg []
 	}).Debugln("peer header processed")
 
 	if magic != MainNet && magic != TestNet {
-		return btcVersion, errors.Wrapf(err, "peer node responded with a non-Bitcoin network magic (%02x)", magic)
+		return btcVersion, errors.Errorf("peer node responded with a non-Bitcoin network magic (%02x)", magic)
+	}
+
+	if magic != getNetworkMagic(testNet) {
+		return btcVersion, errors.Errorf("peer node responded with a unexpected network magic (expected:%02x, returned:%02x)", getNetworkMagic(testNet), magic)
 	}
 
 	if command != VersionCommand {
@@ -322,7 +331,7 @@ func Speak(dialer proxy.Dialer, addr connstring.ConnString, testNet bool) (inter
 	e := make(chan error, 1)
 
 	go func() {
-		version, err := sendMessage(dialer, addr, header, msg)
+		version, err := sendMessage(dialer, addr, header, msg, testNet)
 		if err != nil {
 			e <- err
 			return
