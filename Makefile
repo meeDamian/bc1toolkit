@@ -1,10 +1,17 @@
 PKG=github.com/meeDamian/bc1toolkit
 
+##
+## IMPORTANT:
+##		INCREMENT THIS PRIOR TO A NEW RELEASE
+##
+VERSION := v0.0.2
+
+VERSION_VERSION="${PKG}/lib/help.version=${VERSION}"
 VERSION_STAMP="${PKG}/lib/help.buildStamp=$$(date -u '+%Y-%m-%d_%I:%M:%S%p')"
 VERSION_HASH="${PKG}/lib/help.gitHash=$$(git rev-parse HEAD)"
 VERSION_BUILDER="${PKG}/lib/help.builder=$$(whoami)@$$(hostname)"
 
-BUILD_FLAGS="-s -w -X ${VERSION_STAMP} -X ${VERSION_HASH} -X ${VERSION_BUILDER}"
+BUILD_FLAGS="-s -w -X ${VERSION_VERSION} -X ${VERSION_STAMP} -X ${VERSION_HASH} -X ${VERSION_BUILDER}"
 
 SRC_LIB := $(shell find lib -type f -name '*.go')
 VENDOR_LIB := $(shell find vendor -type f -name '*.go')
@@ -46,13 +53,33 @@ $(allTargets): $(ALL_SRC)
 is-git-clean:
 	git diff-index --quiet HEAD
 
+git-tag:
+	git tag -sa ${VERSION} -m "${VERSION}"
 
-dist: is-git-clean clean $(allTargets)
-	zip -j dist/bc1toolkit-mac.zip dist/darwin-amd64/*
-	zip -j dist/bc1toolkit-linux.zip dist/linux-amd64/*
-	zip -j dist/bc1toolkit-raspberry.zip dist/linux-arm/*
-	zip -j dist/bc1toolkit-windows.zip dist/windows-amd64/*
-	zip -j dist/bc1toolkit-freebsd.zip dist/freebsd-amd64/*
+
+releases/$(VERSION):
+	[ ! -d $@ ]
+	mkdir -p $@
+
+releases/$(VERSION)/bc1toolkit-$(VERSION)-mac.zip:
+	zip -j $@ dist/darwin-amd64/*
+
+releases/$(VERSION)/bc1toolkit-$(VERSION)-linux.zip:
+	zip -j $@ dist/linux-amd64/*
+
+releases/$(VERSION)/bc1toolkit-$(VERSION)-raspberry.zip:
+	zip -j $@ dist/linux-arm/*
+
+releases/$(VERSION)/bc1toolkit-$(VERSION)-windows.zip:
+	zip -j $@ dist/windows-amd64/*
+
+releases/$(VERSION)/bc1toolkit-$(VERSION)-freebsd.zip:
+	zip -j $@ dist/freebsd-amd64/*
+
+
+releases = $(addsuffix .zip,$(addprefix releases/$(VERSION)/bc1toolkit-$(VERSION)-,mac linux raspberry windows freebsd))
+dist: is-git-clean git-tag releases/$(VERSION) clean $(allTargets) $(releases)
+	@echo "\n\trelease ${VERSION} complete and files are in $</*\n"
 
 
 clean:
@@ -65,7 +92,7 @@ install:
 
 # TODO: uninstall target
 
-.PHONY: all is-git-clean dist clean install
+.PHONY: all is-git-clean git-tag dist clean install
 
 
 

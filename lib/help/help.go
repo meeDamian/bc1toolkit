@@ -17,6 +17,7 @@ type Opts struct {
 }
 
 var (
+	version,
 	buildStamp,
 	gitHash,
 	builder string
@@ -57,7 +58,12 @@ func Parse() ([]string, Opts) {
 	}
 
 	if opts.Version {
-		fmt.Printf("Git Commit Hash: %s\nUTC build time : %s\nBuilt by       : %s\n", gitHash, buildStamp, builder)
+		fmt.Printf("%-16s: %s\n%-16s: %s\n%-16s: %s\n%-16s: %s\n",
+			"Version", version,
+			"Git Commit Hash", gitHash,
+			"UTC built time", buildStamp,
+			"Built by", builder,
+		)
 		os.Exit(0)
 	}
 
