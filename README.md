@@ -11,7 +11,6 @@ Click on name to get more detailed description.
 |----------:|:--------------------------|
 | [bc1isup] | Check status of BTC nodes |
 
-
 [bc1isup]: https://github.com/meeDamian/bc1toolkit/tree/master/bc1isup
 
 ## Installation
@@ -34,3 +33,13 @@ make install
 ```
 
 [Go]: https://golang.org/
+
+### Other useful tools
+
+The table below contains external high-quality tools.  
+
+| name     | short desc                                                            | 
+|---------:|:----------------------------------------------------------------------|
+| [btcdeb] | A set of tools used to debug or construct scripts for use in Bitcoin. |
+
+[btcdeb]: https://github.com/kallewoof/btcdeb
