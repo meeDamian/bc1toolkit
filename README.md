@@ -41,5 +41,7 @@ The table below contains external high-quality tools.
 | name     | short desc                                                            | 
 |---------:|:----------------------------------------------------------------------|
 | [btcdeb] | A set of tools used to debug or construct scripts for use in Bitcoin. |
+| [xpub-converter] | Coverts between any extended key formats |
 
 [btcdeb]: https://github.com/kallewoof/btcdeb
+[xpub-converter]: https://jlopp.github.io/xpub-converter/
