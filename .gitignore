@@ -1,5 +1,6 @@
 /bin/
 /dist/
 /releases/
+/.idea
 
 .DS_Store
