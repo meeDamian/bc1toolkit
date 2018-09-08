@@ -1,0 +1,64 @@
+{{define "content"}}
+<div class="row">
+    <h2>Block Details</h2>
+</div>
+<div class="row">
+    <div class="col-md-8">
+        <table class="table table-bordered table-hover table-striped bg-white">
+            <tbody>
+            <tr>
+                <th>Height</th>
+                <td>{{.Block.Height}}</td>
+            </tr>
+            <tr>
+                <th>Hash</th>
+                <td>{{.Block.Hash}}</td>
+            </tr>
+            <tr>
+                <th>Time</th>
+                <td>{{.Block.Time}}</td>
+            </tr>
+            <tr>
+                <th>Transactions</th>
+                <td>{{.Block.TxCount}}</td>
+            </tr>
+            <tr>
+                <th>Size</th>
+                <td>{{or .Block.Size "N/A"}}</td>
+            </tr>
+            <tr>
+                <th>Weight</th>
+                <td>{{or .Block.Weight "N/A"}}</td>
+            </tr>
+            <tr>
+                <th>Previous block</th>
+                <td><a href="{{.BaseUrl}}/block/{{.Block.PrevHash}}">{{.Block.PrevHash}}</a></td>
+            </tr>
+            <tr>
+                <th>Next block</th>
+                <td>{{if .Block.NextHash}}
+                    <a href="{{.BaseUrl}}/block/{{.Block.NextHash}}">{{.Block.NextHash}}</a>
+                {{end}}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-8">
+        <h4>Transactions</h4>
+    {{if .Block.Txs}}
+        <ul class="list-group">
+        {{$activeTx := .ActiveTx}}
+        {{$baseUrl := .BaseUrl}}
+        {{range $i, $txid := .Block.Txs}}
+            <li class="list-group-item d-flex justify-content-between lh-condensed {{if eq $activeTx $txid}}active{{end}}">
+                <div><a href="{{$baseUrl}}/tx/{{$txid}}">{{$txid}}</a></div>
+                <span class="text-muted">{{add $i 1}}</span>
+            </li>
+        {{end}}
+        </ul>
+    {{else}}
+        <span class="badge badge-warning">Block data not available</span>
+    {{end}}
+    </div>
+</div>
+{{end}}

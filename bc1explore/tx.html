@@ -1,0 +1,115 @@
+{{define "content"}}
+<div class="row">
+    <h2>Transaction Details</h2>
+</div>
+<div class="row">
+    <table class="table table-bordered table-hover table-striped bg-white">
+        <tbody>
+        <tr>
+            <th>TXID</th>
+            <td>{{.Tx.Id}}</td>
+        </tr>
+        <tr>
+            <th>Hash</th>
+            <td>{{.Tx.Hash}}</td>
+        </tr>
+        <tr>
+            <th>Confirmations</th>
+            <td>{{or .Block.Confirmations "0"}}</td>
+        </tr>
+        <tr>
+            <th>In Block</th>
+            <td>
+            {{if .Block}}
+                <a href="{{.BaseUrl}}/block/{{.Block.Hash}}/tx/{{.Tx.Id}}">{{.Block.Hash}}</a>
+            {{else}}
+                <span class="badge badge-primary">Mempool</span>
+            {{end}}
+            </td>
+        </tr>
+        <tr>
+            <th>Size</th>
+            <td>{{.Tx.Size}}</td>
+        </tr>
+        <tr>
+            <th>VSize</th>
+            <td>{{.Tx.VSize}}</td>
+        </tr>
+        <tr>
+            <th>Weight</th>
+            <td>{{.Tx.Weight}}</td>
+        </tr>
+        <tr>
+            <th>Total Inputs</th>
+            <td>{{tounit .Tx.TotalIn "BTC"}}</td>
+        </tr>
+        <tr>
+            <th>Total Outputs</th>
+            <td>{{tounit .Tx.TotalOut "BTC"}}</td>
+        </tr>
+        <tr>
+            <th>Fee</th>
+            <td>{{tounit .Tx.Fee "BTC"}}</td>
+        </tr>
+        <tr>
+            <th>Feerate</th>
+            <td>{{tounit .Tx.FeeRate "sat/B"}}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div class="row">
+    <div class="col">
+        <h4>Inputs</h4>
+        <ul class="list-group">
+        {{$baseUrl := .BaseUrl}}
+        {{range .Tx.Vins}}
+            <li class="list-group-item d-flex justify-content-between lh-condensed">
+            {{if .PrevOut}}
+                <div>
+                {{if gt (len .PrevOut.Addresses) 0}}
+                    <a href="{{$baseUrl}}/tx/{{.Txid}}/n/{{.Vout}}">{{index .PrevOut.Addresses 0}}</a>
+                {{else}}N/A{{end}}
+                </div>
+                <span class="text-muted">{{tounit .PrevOut.Value "BTC"}}</span>
+            {{else}}
+                <div><a href="{{$baseUrl}}/tx/{{.Txid}}/n/{{.Vout}}">{{.Txid}}</a></div>
+            {{end}}
+            </li>
+        {{end}}
+        </ul>
+    </div>
+    <div class="col">
+        <h4>Outputs</h4>
+        <ul class="list-group">
+        {{$n := .N}}
+        {{range .Tx.Vouts}}
+            <li class="list-group-item lh-condensed{{if and $n (eq $n .N)}} active{{end}}">
+                <span class="badge badge-primary">{{.Type}}</span>
+            {{if .Spent}}
+                <span class="badge badge-warning">spent</span>
+            {{else}}
+                <span class="badge badge-success">unspent</span>
+            {{end}}
+                <div>
+                    <h6>{{if gt (len .Addresses) 0 }}{{index .Addresses 0}}{{end}}</h6>
+                    <span class="text-muted{{if .Spent}} spent{{end}}">{{tounit .Value "BTC"}}</span>
+                </div>
+            </li>
+        {{end}}
+        </ul>
+    </div>
+</div>
+<div class="row mt-2">
+    <p>
+        <button type="button" class="btn btn-primary" data-toggle="collapse" href="#collapse_json" role="button"
+                aria-expanded="false" aria-controls="collapse_json">
+            Show RAW Json
+        </button>
+    </p>
+</div>
+<div class="row collapse" id="collapse_json">
+    <h4>RAW Json</h4>
+    <textarea name="rawjson" style="width:100%;height:10em;">{{.Tx.JSON}}</textarea>
+</div>
+{{end}}
