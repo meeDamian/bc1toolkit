@@ -4,7 +4,7 @@ PKG=github.com/meeDamian/bc1toolkit
 ## IMPORTANT:
 ##		INCREMENT THIS PRIOR TO A NEW RELEASE
 ##
-VERSION := v0.0.2
+VERSION := v0.0.3
 
 VERSION_VERSION="${PKG}/lib/help.version=${VERSION}"
 VERSION_STAMP="${PKG}/lib/help.buildStamp=$$(date -u '+%Y-%m-%d_%I:%M:%S%p')"
