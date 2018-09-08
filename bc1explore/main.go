@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/gobuffalo/packr"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -20,6 +21,7 @@ type (
 		Blocks   int    `json:"blocks"`
 		BestHash string `json:"bestblockhash"`
 	}
+
 	Block struct {
 		Height        int64    `json:"height"`
 		TxCount       int64    `json:"nTx"`
@@ -32,6 +34,7 @@ type (
 		Ts            int64    `json:"mediantime"`
 		Txs           []string `json:"tx"`
 	}
+
 	Vout struct {
 		N            int     `json:"n"`
 		Value        float64 `json:"value"`
@@ -94,10 +97,8 @@ var (
 	port            = flag.Int("port", 8080, "What port should this blockchain explorer work on")
 
 	baseUrl = fmt.Sprintf("http://127.0.0.1:%d", *port)
-	templ   = template.Must(template.ParseFiles("overview.html"))
 
-	blockTempl,
-	txTempl *template.Template
+	templ, blockTempl, txTempl *template.Template
 
 	defaultPageData = PageData{
 		HtmlTitle: name,
@@ -128,13 +129,16 @@ func (vo Vout) Type() string        { return vo.ScriptPubKey.Type }
 func init() {
 	flag.Parse()
 
+	box := packr.NewBox(".")
+	templ = template.Must(template.New("overview").Parse(box.String("overview.html")))
+
 	var err error
-	blockTempl, err = template.Must(templ.Clone()).Funcs(funcMap).ParseFiles("block.html")
+	blockTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(box.String("block.html"))
 	if err != nil {
 		panic(err)
 	}
 
-	txTempl, err = template.Must(templ.Clone()).Funcs(funcMap).ParseFiles("tx.html")
+	txTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(box.String("tx.html"))
 	if err != nil {
 		panic(err)
 	}
