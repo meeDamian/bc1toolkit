@@ -23,6 +23,11 @@ Usage of bc1explore:
   -testnet string
     	Point to the REST interface of your testnet Bitcoin node (default "http://127.0.0.1:18332")
 ```
+### Note
+
+Last version with no dependencies is [available here]. Note that it needs all templates to be copied together with the binary, and might contain bugs fixed in later versions.
+
+[available here]: https://github.com/meeDamian/bc1toolkit/tree/bc1explore-nodeps/bc1explore  
 
 ### Demo
 
