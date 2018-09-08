@@ -14,25 +14,30 @@ VERSION_BUILDER="${PKG}/lib/help.builder=$$(whoami)@$$(hostname)"
 BUILD_FLAGS="-s -w -X ${VERSION_VERSION} -X ${VERSION_STAMP} -X ${VERSION_HASH} -X ${VERSION_BUILDER}"
 
 SRC_LIB := $(shell find lib -type f -name '*.go')
-VENDOR_LIB := $(shell find vendor -type f -name '*.go')
 ALL_SRC := $(shell find . -type f -name '*.go')
+GO_MOD := go.mod go.sum
 
 # currently supported platforms
 platforms = windows-amd64 darwin-amd64 linux-amd64 linux-arm freebsd-amd64
-binaries = bc1isup
+binaries = bc1isup bc1explore
 
 
 #
 ## Simple builds for the current platform
 #
 # TODO: collapse all into one
-bin/bc1isup: bc1isup/main.go $(SRC_LIB) $(VENDOR_LIB)
+bin/bc1isup: bc1isup/main.go $(SRC_LIB) $(GO_MOD)
 	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1isup
 
-bin/bc1tx: bc1tx/main.go $(SRC_LIB) $(VENDOR_LIB)
+bin/bc1tx: bc1tx/main.go $(SRC_LIB) $(GO_MOD)
 	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1tx
 
-all: bin/bc1isup bin/bc1tx
+EXPLORE_TEMPLATES := $(shell find bc1explore -type f -name '*.html')
+bin/bc1explore: bc1explore/main.go $(EXPLORE_TEMPLATES) $(GO_MOD)
+	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1explore
+
+
+all: bin/bc1isup bin/bc1explore
 
 
 #
@@ -92,6 +97,7 @@ clean:
 
 install:
 	go install -v -ldflags ${BUILD_FLAGS} ${PKG}/bc1isup
+	go install -v -ldflags ${BUILD_FLAGS} ${PKG}/bc1explore
 
 # TODO: uninstall target
 
