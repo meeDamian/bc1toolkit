@@ -84,7 +84,7 @@
         <ul class="list-group">
         {{$n := .N}}
         {{range .Tx.Vouts}}
-            <li class="list-group-item lh-condensed{{if and $n (eq $n .N)}} active{{end}}">
+            <li class="list-group-item lh-condensed{{if eq $n .N}} active{{end}}">
                 <span class="badge badge-primary">{{.Type}}</span>
             {{if .Spent}}
                 <span class="badge badge-warning">spent</span>
