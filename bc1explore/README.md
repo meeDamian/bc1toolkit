@@ -48,9 +48,14 @@ go build main.go
 
 ### TODO:
 
-* Squash bugs that are still out there
-* add footer & breadcrumbs
-* create 2nd version with [packr] to get a portable binary
-* add to `Makefile`
+- [ ] Squash bugs that are still out there
+- [ ] add footer & breadcrumbs
+- [ ] create 2nd version with [packr] to get a portable binary
+- [ ] add to `Makefile`
+- [ ] write better run instructions
+- [ ] add torrc config
+- [ ] add nginx config
+- [ ] make `age` human-friendly
+- [ ] make all sizes more human-friendly 
 
 [packr]: https://github.com/gobuffalo/packr

@@ -7,11 +7,13 @@ A set of diverse, Bitcoin-related tools. All minimal, focused and kept in UNIX s
 
 Click on name to get more detailed description.
 
-| name      | short desc                |
-|----------:|:--------------------------|
-| [bc1isup] | Check status of BTC nodes |
+| name         | short desc                          |
+|-------------:|:------------------------------------|
+| [bc1isup]    | Check status of BTC nodes           |
+| [bc1explore] | Minimal, drop-in BTC block explorer | 
 
 [bc1isup]: https://github.com/meeDamian/bc1toolkit/tree/master/bc1isup
+[bc1explore]: https://github.com/meeDamian/bc1toolkit/tree/master/bc1explore
 
 ## Installation
 
@@ -24,7 +26,7 @@ Click on name to get more detailed description.
 
 ## From sources
 
-**Note:** You need to have a _recent-ish_ version of [Go] installed
+**Note:** You need to have [Go] v1.11 or newer installed, then:
 
 ```bash
 git clone git@github.com:meeDamian/bc1toolkit.git
