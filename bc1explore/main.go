@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"github.com/meeDamian/bc1toolkit/lib/common"
 	"github.com/meeDamian/bc1toolkit/lib/help"
+	"github.com/sirupsen/logrus"
 	"html/template"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -26,7 +26,7 @@ const (
 		"`bitcoin.conf` is usually located in `~/.bitcoin/bitcoin.conf` on linux, and " +
 		"`~/Library/Application\\ Support/Bitcoin/bitcoin.conf` on MacOS."
 
-	name = "Dumb Block Explorer (now in Go, at least)"
+	name = "bc1explore"
 )
 
 type (
@@ -105,7 +105,9 @@ type (
 )
 
 var (
-	baseUrl                    string
+	baseUrl string
+	log     *logrus.Entry
+
 	templ, blockTempl, txTempl *template.Template
 
 	Opts struct {
@@ -140,32 +142,40 @@ func (b Block) Time() string        { return fmt.Sprintf("%d", b.Ts) }
 func (vo Vout) Addresses() []string { return vo.ScriptPubKey.Addresses }
 func (vo Vout) Type() string        { return vo.ScriptPubKey.Type }
 
-func init() {
-	common.Logger.Name(BinaryName)
+func setupTemplates() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Panic("can't parse template", r)
+		}
+	}()
 
-	help.Customize(
-		"",
-		description,
-		"",
-		BinaryName, &Opts,
+	templ = template.Must(
+		template.New("overview").Parse(_escFSMustString(false, "/templates/overview.html")),
 	)
 
+	blockTempl = template.Must(
+		template.Must(templ.Clone()).
+			Funcs(funcMap).
+			Parse(_escFSMustString(false, "/templates/block.html")),
+	)
+
+	txTempl = template.Must(
+		template.Must(templ.Clone()).
+			Funcs(funcMap).
+			Parse(_escFSMustString(false, "/templates/tx.html")),
+	)
+}
+
+func init() {
+	help.Customize("", description, "", BinaryName, &Opts)
 	help.Parse()
 
+	common.Logger.Name(BinaryName)
+	//common.Logger.SetLevel(logrus.InfoLevel)
+	log = common.Logger.Get()
+
+	setupTemplates()
 	baseUrl = fmt.Sprintf("http://127.0.0.1:%d", Opts.Port)
-
-	templ = template.Must(template.New("overview").Parse(_escFSMustString(false, "/templates/overview.html")))
-
-	var err error
-	blockTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(_escFSMustString(false, "/templates/block.html"))
-	if err != nil {
-		panic(err)
-	}
-
-	txTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(_escFSMustString(false, "/templates/tx.html"))
-	if err != nil {
-		panic(err)
-	}
 }
 
 func getNodeUrl(testnet bool, path string) (url string) {
@@ -234,7 +244,9 @@ func getUTXO(testnet bool, txid string, n int) (spent bool, err error) {
 	}
 	defer res.Body.Close()
 
-	x := struct{ Bitmap string `json:"bitmap"` }{}
+	x := struct {
+		Bitmap string `json:"bitmap"`
+	}{}
 	err = json.NewDecoder(res.Body).Decode(&x)
 	if x.Bitmap == "0" {
 		return true, nil
@@ -293,6 +305,8 @@ func getTx(testnet bool, txid string, complete bool) (tx Tx, err error) {
 }
 
 func overview(w http.ResponseWriter, testnet bool) {
+	log.WithFields(logrus.Fields{"testnet": testnet}).Debug("Overview requested")
+
 	ci, err := getInfo(testnet)
 	if err != nil {
 		http.Error(w, "unable to get chaindata", 500)
@@ -317,6 +331,8 @@ func overview(w http.ResponseWriter, testnet bool) {
 }
 
 func block(w http.ResponseWriter, testnet bool, hash, activeTxId string) {
+	log.WithFields(logrus.Fields{"testnet": testnet, "hash": hash, "txid": activeTxId}).Debug("Block requested")
+
 	blocks, err := getBlocks(testnet, hash, 1)
 	if err != nil {
 		http.Error(w, "unable to get block", 500)
@@ -343,6 +359,8 @@ func block(w http.ResponseWriter, testnet bool, hash, activeTxId string) {
 }
 
 func tx(w http.ResponseWriter, testnet bool, txid, n string) {
+	log.WithFields(logrus.Fields{"testnet": testnet, "txid": txid, "n": n}).Debug("Transaction requested")
+
 	tx, err := getTx(testnet, txid, true)
 	if err != nil {
 		http.Error(w, "unable to get transaction", 500)
@@ -374,40 +392,45 @@ func simpleRouter(w http.ResponseWriter, r *http.Request) {
 		testnet, parts = true, parts[1:]
 	}
 
-	if len(parts) == 1 {
+	if len(parts) == 1 && len(r.URL.Path) == 1 {
 		overview(w, testnet)
 		return
 	}
 
-	route, id, parts := parts[0], parts[1], parts[2:]
+	if len(parts) >= 2 {
+		route, id, parts := parts[0], parts[1], parts[2:]
 
-	switch strings.ToLower(route) {
-	case "block":
-		var txid string
-		if len(parts) >= 2 && strings.ToLower(parts[0]) == "tx" {
-			txid = parts[1]
+		switch strings.ToLower(route) {
+		case "block":
+			var txid string
+			if len(parts) >= 2 && strings.ToLower(parts[0]) == "tx" {
+				txid = parts[1]
+			}
+			block(w, testnet, id, txid)
+
+		case "tx":
+			var n string
+			if len(parts) >= 2 && strings.ToLower(parts[0]) == "n" {
+				n = parts[1]
+			}
+			tx(w, testnet, id, n)
+
+		case "search":
+			return
+
+		default:
+
+			//TODO: 404 not found
 		}
-		block(w, testnet, id, txid)
-
-	case "tx":
-		var n string
-		if len(parts) >= 2 && strings.ToLower(parts[0]) == "n" {
-			n = parts[1]
-		}
-		tx(w, testnet, id, n)
-
-	case "search":
-		return
-
-	default:
-		//TODO: 404 not found
 	}
 
+	http.Redirect(w, r, baseUrl, http.StatusTemporaryRedirect)
 	return
 }
 
 func main() {
+	http.HandleFunc("/favicon.ico", http.NotFound)
 	http.HandleFunc("/", simpleRouter)
-	log.Println("bc1explore server started on", baseUrl)
+	log.WithField("addr", baseUrl).Info("Server started")
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", Opts.Port), nil))
 }
