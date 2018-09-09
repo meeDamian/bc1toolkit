@@ -130,15 +130,15 @@ func (vo Vout) Type() string        { return vo.ScriptPubKey.Type }
 func init() {
 	flag.Parse()
 
-	templ = template.Must(template.New("overview").Parse(_escFSMustString(true, "/templates/overview.html")))
+	templ = template.Must(template.New("overview").Parse(_escFSMustString(false, "/templates/overview.html")))
 
 	var err error
-	blockTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(_escFSMustString(true, "/templates/block.html"))
+	blockTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(_escFSMustString(false, "/templates/block.html"))
 	if err != nil {
 		panic(err)
 	}
 
-	txTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(_escFSMustString(true, "/templates/tx.html"))
+	txTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(_escFSMustString(false, "/templates/tx.html"))
 	if err != nil {
 		panic(err)
 	}
