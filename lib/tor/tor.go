@@ -23,7 +23,9 @@ func checkConnection(d proxy.Dialer) error {
 		return errors.Wrap(err, "can't .Get() Tor-check website")
 	}
 
-	v := struct{ IsTor bool `json:"IsTor"` }{}
+	v := struct {
+		IsTor bool `json:"IsTor"`
+	}{}
 	err = json.NewDecoder(resp.Body).Decode(&v)
 	if err != nil {
 		return errors.Wrap(err, "Unable to JSON-decode response")
