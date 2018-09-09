@@ -15,25 +15,31 @@ BUILD_FLAGS="-s -w -X ${VERSION_VERSION} -X ${VERSION_STAMP} -X ${VERSION_HASH} 
 
 SRC_LIB := $(shell find lib -type f -name '*.go')
 ALL_SRC := $(shell find . -type f -name '*.go')
+EXPLORE_TEMPLATES := $(shell find bc1explore/templates -type f -name '*.html')
 GO_MOD := go.mod go.sum
 
 # currently supported platforms
 platforms = windows-amd64 darwin-amd64 linux-amd64 linux-arm freebsd-amd64
 binaries = bc1isup bc1explore
 
+#
+## Code Generation
+#
+bc1explore/templates_generated.go:
+	go generate github.com/meeDamian/bc1toolkit/bc1explore
+
 
 #
 ## Simple builds for the current platform
 #
-# TODO: collapse all into one
+# TODO: collapse all into one(?)
 bin/bc1isup: bc1isup/main.go $(SRC_LIB) $(GO_MOD)
 	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1isup
 
 bin/bc1tx: bc1tx/main.go $(SRC_LIB) $(GO_MOD)
 	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1tx
 
-EXPLORE_TEMPLATES := $(shell find bc1explore -type f -name '*.html')
-bin/bc1explore: bc1explore/main.go $(EXPLORE_TEMPLATES) $(GO_MOD)
+bin/bc1explore: bc1explore/main.go bc1explore/templates_generated.go $(EXPLORE_TEMPLATES) $(GO_MOD)
 	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1explore
 
 

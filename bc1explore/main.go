@@ -1,11 +1,12 @@
 package main
 
+//go:generate go run templates/gen.go
+
 import (
 	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/gobuffalo/packr"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -14,7 +15,7 @@ import (
 	"strings"
 )
 
-const name = "Dumb Block Explorer (now at least in Go)"
+const name = "Dumb Block Explorer (now in Go, at least)"
 
 type (
 	ChainInfo struct {
@@ -129,16 +130,15 @@ func (vo Vout) Type() string        { return vo.ScriptPubKey.Type }
 func init() {
 	flag.Parse()
 
-	box := packr.NewBox(".")
-	templ = template.Must(template.New("overview").Parse(box.String("overview.html")))
+	templ = template.Must(template.New("overview").Parse(_escFSMustString(true, "/templates/overview.html")))
 
 	var err error
-	blockTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(box.String("block.html"))
+	blockTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(_escFSMustString(true, "/templates/block.html"))
 	if err != nil {
 		panic(err)
 	}
 
-	txTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(box.String("tx.html"))
+	txTempl, err = template.Must(templ.Clone()).Funcs(funcMap).Parse(_escFSMustString(true, "/templates/tx.html"))
 	if err != nil {
 		panic(err)
 	}
