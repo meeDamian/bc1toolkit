@@ -5,8 +5,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
+	"github.com/meeDamian/bc1toolkit/lib/common"
+	"github.com/meeDamian/bc1toolkit/lib/help"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -15,7 +16,18 @@ import (
 	"strings"
 )
 
-const name = "Dumb Block Explorer (now in Go, at least)"
+const (
+	BinaryName = "bc1explore"
+
+	description = "Minimal, drop-in Bitcoin Blockchain explorer that uses local full node as a source of data.\n" +
+		"\n" +
+		"To enable for communication with Bitcoin Core, `rest=1` has to be added to `bitcoin.conf`. This tool works " +
+		"well both with and without `txindex=1`, however having `txindex` enabled makes the experience better.\n" +
+		"`bitcoin.conf` is usually located in `~/.bitcoin/bitcoin.conf` on linux, and " +
+		"`~/Library/Application\\ Support/Bitcoin/bitcoin.conf` on MacOS."
+
+	name = "Dumb Block Explorer (now in Go, at least)"
+)
 
 type (
 	ChainInfo struct {
@@ -93,13 +105,14 @@ type (
 )
 
 var (
-	testnetEndpoint = flag.String("testnet", "http://127.0.0.1:18332", "Point to the REST interface of your testnet Bitcoin node")
-	mainnetEndpoint = flag.String("mainnet", "http://127.0.0.1:8332", "Point to the REST interface of your mainnet Bitcoin node")
-	port            = flag.Int("port", 8080, "What port should this blockchain explorer work on")
-
-	baseUrl = fmt.Sprintf("http://127.0.0.1:%d", *port)
-
+	baseUrl                    string
 	templ, blockTempl, txTempl *template.Template
+
+	Opts struct {
+		TestNet string `long:"testnet-node" short:"T" description:"REST interface of your testnet Bitcoin node" default:"http://127.0.0.1:18332"`
+		MainNet string `long:"mainnet-node" short:"M" description:"REST interface of your mainnet Bitcoin node" default:"http://127.0.0.1:8332"`
+		Port    int    `long:"port" short:"p" description:"What port should this blockchain explorer work on" default:"8080"`
+	}
 
 	defaultPageData = PageData{
 		HtmlTitle: name,
@@ -128,7 +141,18 @@ func (vo Vout) Addresses() []string { return vo.ScriptPubKey.Addresses }
 func (vo Vout) Type() string        { return vo.ScriptPubKey.Type }
 
 func init() {
-	flag.Parse()
+	common.Logger.Name(BinaryName)
+
+	help.Customize(
+		"",
+		description,
+		"",
+		BinaryName, &Opts,
+	)
+
+	help.Parse()
+
+	baseUrl = fmt.Sprintf("http://127.0.0.1:%d", Opts.Port)
 
 	templ = template.Must(template.New("overview").Parse(_escFSMustString(false, "/templates/overview.html")))
 
@@ -145,9 +169,9 @@ func init() {
 }
 
 func getNodeUrl(testnet bool, path string) (url string) {
-	url = *mainnetEndpoint
+	url = Opts.MainNet
 	if testnet {
-		url = *testnetEndpoint
+		url = Opts.TestNet
 	}
 	return fmt.Sprintf("%s/rest/%s", url, path)
 }
@@ -384,5 +408,6 @@ func simpleRouter(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/", simpleRouter)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), nil))
+	log.Println("bc1explore server started on", baseUrl)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", Opts.Port), nil))
 }
