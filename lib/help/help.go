@@ -32,11 +32,15 @@ func Customize(usage, description, torAutoBehaviour, name string, data interface
 		parser.Usage = usage
 	}
 
-	if description != "" {
-		if torAutoBehaviour != "" {
-			description = fmt.Sprintf("%s\n\nTor \"auto\" behaviour: %s", description, torAutoBehaviour)
-		}
+	if torAutoBehaviour == "" {
+		parser.FindOptionByLongName("tor").Hidden = true
+		parser.FindOptionByLongName("tor-mode").Hidden = true
+		parser.FindOptionByLongName("tor-mode").Choices = []string{}
+	} else if description != "" {
+		description = fmt.Sprintf("%s\n\nTor \"auto\" behaviour: %s", description, torAutoBehaviour)
+	}
 
+	if description != "" {
 		parser.LongDescription = description
 	}
 
