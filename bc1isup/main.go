@@ -16,12 +16,14 @@ import (
 )
 
 const (
+	BinaryName = "bc1isup"
+
 	description = `Checks addresses for running Bitcoin nodes. When addresses are both piped-in and provided at command line, piped ones are first.
 
 Each address provided, outputs its own line with corresponding node status info (customizable with --output=?).
 Exit code of 0 is returned only if each address provided had at least one running node.`
 
-	torBehaviour = `try using Tor, if not available, fall back to clearnet.`
+	torBehaviour = `tries using Tor, if not available, falls back to clearnet.`
 )
 
 type (
@@ -50,13 +52,13 @@ var (
 
 // NOTE: all errors returned here are quoted strings to preserve `jq` compatibility
 func init() {
-	common.Logger.Name("bc1isup")
+	common.Logger.Name(BinaryName)
 
 	help.Customize(
 		"[OPTIONS] (domain|IP)[:port] ...",
 		description,
 		torBehaviour,
-		"bc1isup", &Opts,
+		BinaryName, &Opts,
 	)
 
 	// read parameters passed to a binary
