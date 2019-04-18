@@ -6,14 +6,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/meeDamian/bc1toolkit/lib/common"
-	"github.com/meeDamian/bc1toolkit/lib/help"
-	"github.com/sirupsen/logrus"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/meeDamian/bc1toolkit/lib/common"
+	"github.com/meeDamian/bc1toolkit/lib/help"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -175,7 +176,7 @@ func init() {
 	log = common.Logger.Get()
 
 	setupTemplates()
-	baseUrl = fmt.Sprintf("http://127.0.0.1:%d", Opts.Port)
+	baseUrl = fmt.Sprintf("http://localhost:%d", Opts.Port)
 }
 
 func getNodeUrl(testnet bool, path string) (url string) {
