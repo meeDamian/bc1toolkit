@@ -9,7 +9,10 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-const cacheDir = "com.meedamian.bc1toolkit"
+const (
+	cacheDir      = "com.meedamian.bc1toolkit"
+	DefaultConfig = "./bc1toolkit.conf"
+)
 
 type (
 	Dialers struct {

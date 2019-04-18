@@ -62,23 +62,32 @@ func Customize(usage, description, torAutoBehaviour, name string, data interface
 	}
 }
 
-func processConfigFile(fileName string, bestEffortRead bool) error {
+func processConfigFile(fileName string) error {
+	var bestEffortOnly bool
+	if len(fileName) == 0 {
+		fileName = common.DefaultConfig
+		bestEffortOnly = true
+	}
+
 	iniParser := flags.NewIniParser(parser)
 	err := iniParser.ParseFile(fileName)
 	if err != nil {
-		if bestEffortRead {
+		if bestEffortOnly {
 			return nil
 		}
 
 		return errors.Wrapf(err, "Unable to read config")
 	}
 
-	common.Logger.Get().WithField("config-file", fileName).Debug("Config read successfully")
-
 	// Parse CLI again, because CLI takes precedent above config from file
 	_, _ = parser.Parse()
 
-	if opts.Save && !bestEffortRead {
+	common.Logger.Get().
+		WithField("config-file", fileName).
+		WithField("default", bestEffortOnly).
+		Info("Config read successfully")
+
+	if opts.Save && !bestEffortOnly {
 		err = iniParser.WriteFile(opts.Config, flags.IniNone)
 		if err != nil {
 			return errors.Wrap(err, "Unable to save config")
@@ -110,17 +119,6 @@ func Parse() ([]string, Opts) {
 		os.Exit(0)
 	}
 
-	if len(opts.Config) == 0 && opts.Save {
-		fmt.Printf("To --save config, you need to pass path to it explicitly, ex:\n\t--config=./bc1toolkit.conf --save\n\n")
-		os.Exit(1)
-	}
-
-	err = processConfigFile(opts.Config, len(opts.Config) == 0)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
 	switch len(opts.Verbose) {
 	case 0:
 		common.Logger.SetLevel(logrus.WarnLevel)
@@ -132,6 +130,17 @@ func Parse() ([]string, Opts) {
 		fallthrough
 	default: // more than 2
 		common.Logger.SetLevel(logrus.DebugLevel)
+	}
+
+	if len(opts.Config) == 0 && opts.Save {
+		fmt.Printf("To --save config, you need to pass path to it explicitly, ex:\n\t--config=%s --save\n\n", common.DefaultConfig)
+		os.Exit(1)
+	}
+
+	err = processConfigFile(opts.Config)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	return args, opts

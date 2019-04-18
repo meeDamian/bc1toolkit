@@ -39,13 +39,14 @@ type (
 )
 
 var (
+	commonOpts help.Opts
+
 	opts struct {
 		TestNet bool   `long:"testnet" short:"T" description:"Check for testnet node"`
 		MainNet bool   `long:"mainnet" short:"M" description:"Check for mainnet node"`
 		AutoNet bool   `no-flag:"can be used to determine if check was requested or is an auto-fallback"`
 		Output  string `long:"output" short:"o" description:"Choose line format: 'json' for JSON array. 'simple' for a single \"up\" or \"down\". 'none' for no output, and only exit code" default:"json" choice:"json" choice:"simple" choice:"none"`
 	}
-	commonOpts help.Opts
 
 	addresses []string
 )
