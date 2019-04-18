@@ -36,9 +36,6 @@ bc1explore/templates_generated.go: bc1explore/templates/gen.go $(EXPLORE_TEMPLAT
 bin/bc1isup: bc1isup/main.go $(SRC_LIB) $(GO_MOD)
 	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1isup
 
-bin/bc1tx: bc1tx/main.go $(SRC_LIB) $(GO_MOD)
-	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1tx
-
 bin/bc1explore: bc1explore/main.go bc1explore/templates_generated.go $(SRC_LIB) $(GO_MOD)
 	go build -v -o $@ -ldflags ${BUILD_FLAGS} ${PKG}/bc1explore
 
