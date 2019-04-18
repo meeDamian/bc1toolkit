@@ -4,3 +4,7 @@
 /.idea
 
 .DS_Store
+
+# ignore all configs except the example one
+*.conf
+!/bc1toolkit.example.conf

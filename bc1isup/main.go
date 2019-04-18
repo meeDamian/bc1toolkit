@@ -39,13 +39,13 @@ type (
 )
 
 var (
-	Opts struct {
+	opts struct {
 		TestNet bool   `long:"testnet" short:"T" description:"Check for testnet node"`
 		MainNet bool   `long:"mainnet" short:"M" description:"Check for mainnet node"`
 		AutoNet bool   `no-flag:"can be used to determine if check was requested or is an auto-fallback"`
 		Output  string `long:"output" short:"o" description:"Choose line format: 'json' for JSON array. 'simple' for a single \"up\" or \"down\". 'none' for no output, and only exit code" default:"json" choice:"json" choice:"simple" choice:"none"`
 	}
-	opts help.Opts
+	commonOpts help.Opts
 
 	addresses []string
 )
@@ -58,11 +58,11 @@ func init() {
 		"[OPTIONS] (domain|IP)[:port] ...",
 		description,
 		torBehaviour,
-		BinaryName, &Opts,
+		BinaryName, &opts,
 	)
 
 	// read parameters passed to a binary
-	addresses, opts = help.Parse()
+	addresses, commonOpts = help.Parse()
 
 	// check for stuff being piped-in
 	stat, _ := os.Stdin.Stat()
@@ -96,13 +96,13 @@ func init() {
 }
 
 func attemptCommunication(explicitlyRequested, testNet bool, dialer proxy.Dialer, c connstring.ConnString) (version interface{}) {
-	if !explicitlyRequested && !Opts.AutoNet {
+	if !explicitlyRequested && !opts.AutoNet {
 		return nil
 	}
 
 	version, err := btc.Speak(dialer, c, testNet)
 	if err != nil {
-		if Opts.AutoNet {
+		if opts.AutoNet {
 			common.Logger.Get().Debugln(err)
 			return nil
 		}
@@ -120,12 +120,12 @@ func checkConnString(dialers common.Dialers, c connstring.ConnString) (found []i
 		return nil, err
 	}
 
-	version := attemptCommunication(Opts.MainNet, false, dialer, c)
+	version := attemptCommunication(opts.MainNet, false, dialer, c)
 	if version != nil {
 		found = append(found, version)
 	}
 
-	version = attemptCommunication(Opts.TestNet, true, dialer, c)
+	version = attemptCommunication(opts.TestNet, true, dialer, c)
 	if version != nil {
 		found = append(found, version)
 	}
@@ -156,22 +156,22 @@ func main() {
 	}
 
 	// if neither is specified, perform auto check
-	if !Opts.TestNet && !Opts.MainNet {
-		Opts.AutoNet = true
+	if !opts.TestNet && !opts.MainNet {
+		opts.AutoNet = true
 	}
 
 	// skip Tor altogether when possible
 	if onlyLocal {
 		common.Logger.Get().Debugln("only local addresses provided: disabling To completely")
-		opts.TorMode = "never"
+		commonOpts.TorMode = "never"
 
-	} else if opts.TorMode == "native" && noTor {
+	} else if commonOpts.TorMode == "native" && noTor {
 		common.Logger.Get().Debugln("--tor-mode=native set and no Tor addresses provided: disabling To completely")
-		opts.TorMode = "never"
+		commonOpts.TorMode = "never"
 	}
 
 	// Return only dialers that will be used in requests
-	dialers, err := common.GetDialers(opts.TorMode, opts.TorSocks)
+	dialers, err := common.GetDialers(commonOpts.TorMode, commonOpts.TorSocks)
 	if err != nil {
 		fmt.Printf(`"%s"\n`, err)
 		os.Exit(1)
@@ -230,11 +230,11 @@ func main() {
 					delete(received, last)
 
 					// output is irrelevant. Just wait until all are received
-					if Opts.Output == "none" {
+					if opts.Output == "none" {
 						continue
 					}
 
-					if Opts.Output == "simple" {
+					if opts.Output == "simple" {
 						if len(item) == 0 {
 							fmt.Println("down")
 							continue
@@ -250,7 +250,7 @@ func main() {
 						fmt.Println(out)
 					}
 
-					if Opts.Output == "json" {
+					if opts.Output == "json" {
 						v, err := json.Marshal(item)
 						if err != nil {
 							exitCode = 1
